@@ -11,44 +11,45 @@ public class Graph : MonoBehaviour
     [SerializeField, Range(10,100)] //esto es para que en la ui se vea como un rango para escoger entre el 10 y el 100
     int resolution = 10;
 
+    [SerializeField]
+    FunctionLibrary.FunctionName function;
+    
+
     Transform[] points;
 
     private void Awake()
     {
-        points = new Transform[resolution];
+        points = new Transform[resolution * resolution];  //antes era solo resolution pero al incluir la z multiplicamos al cuadrado el numero de puntos que habran para que sea una matriz y no una linea
         float step = 2f / resolution;
-        var position = Vector3.zero;
         var scale = Vector3.one * step; //esto hace q todos los cubos tengan la misma escala y en funcion si son mas o menos tengan una menor o mayor escala
-        //y que la escala por tanto no pase del rango -1 a 1, que en reaildad ahroa seria de 0 a 2, pero eso lo cambiaremos en la funcion de abajo
-        
+                                        //y que la escala por tanto no pase del rango -1 a 1, que en reaildad ahroa seria de 0 a 2, pero eso lo cambiaremos en la funcion de abajo
+
         for (int i = 0; i < points.Length; i++)
         {
-          
-            Transform point = Instantiate(pointPrefab); //cuando instanciamos un prefab lo que hace es añadirlo a la escena
-                                                        //En este caso instanciamos el prefab pero dentro del objeto point que tenemos que es de tipo transformpoints[                
-            
-            points[i] = point;
-            
-            point.SetParent(transform, false); //esto es para que en la jerarquia no aparezcan las isntancias como objetos ahi sueltos, sino que esten dentro del empyobject del graph
-                                                //Y el false es para que el componente transform de las isntancias no sea el mismo que el del padre, que es lo que haria si pusiera true
-            position.x = (i + 0.5f) * step - 1f;
-           
-            point.localPosition = position;//vector3.right es lo mismo que Vector3(1,0,0).
+
+            Transform point = points[i] = Instantiate(pointPrefab);
             point.localScale = scale;
-            
-            
+            point.SetParent(transform, false);
         }
     }
     private void Update()
     {
+        FunctionLibrary.Function f = FunctionLibrary.GetFunction(function);
         float time = Time.time;
-        for (int i = 0; i < points.Length; i++) {
-            Transform point = points[i];
-            Vector3 position = point.localPosition;
-            position.y = Mathf.Sin(Mathf.PI * (position.x + time)); //position.y = Mathf.Sin(position.x); como nuestra posicion solo va de -1 a 1 y el sin se da en 2pi, podemos multiplicarlo por pi para que se de toda la funcion y no solo la parte que iria de -1 a 1
-            point.localPosition = position;
-
+        float step = 2f / resolution;
+        float v = 0.5f * step - 1f;
+        for (int i = 0, x = 0, z = 0; i < points.Length; i++, x++)
+        {
+            if (x == resolution)
+            {
+                x = 0;
+                z += 1;
+                v = (z + 0.5f) * step - 1f;
+            }
+            float u = (x + 0.5f) * step - 1f;
+            points[i].localPosition = f(u, v, time);
         }
+
     }
 
 }
